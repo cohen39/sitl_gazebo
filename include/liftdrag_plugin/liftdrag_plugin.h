@@ -54,46 +54,58 @@ namespace gazebo
     /// \brief Pointer to model containing plugin.
     protected: physics::ModelPtr model;
 
+    // coefficient of lift
     protected: double cl;
 
+    // coefficient of drag
     protected: double cd;
 
+    // pitch moment coefficient
     protected: double cm;
 
-    /// \brief Coefficient of Lift / alpha slope.
-    /// Lift = C_L * q * S
-    /// where q (dynamic pressure) = 0.5 * rho * v^2
+    //  lift coefficient for angle of attack
     protected: double cla;
 
+    // lift coefficient at 0 angle of attack
     protected: double cl0;
 
+    // lift coefficient for alerion deflection
     protected: double clda;
 
+    // lift coefficient for elevator deflection
     protected: double clde;
 
+    // drag coefficient for cl^2
     protected: double cd_a;
 
+    // drag coefficient for cl
     protected: double cd_b;
 
+    // drag coefficient at cl = 0
     protected: double cd_c;
 
-    /// \brief Coefficient of Moment / alpha slope.
-    /// Moment = C_M * q * S
-    /// where q (dynamic pressure) = 0.5 * rho * v^2
+    // pitch moment coefficient for angle of attack
     protected: double cma;
 
+    // pitch moment coefficient at 0 angle of attack
     protected: double cm0;
 
+    // pitch moment coefficient for aileron deflection
     protected: double cmda;
 
+    // Pitch moment coeffecient for elevator deflection
     protected: double cmde;
 
+    // Roll moment coefficient for difference in aileron deflection
     protected: double crda;
 
+    // angle of left aileron deflection (positive increases lift)
     protected: double dal;
 
+    // angle of right aileron deflection (positive increases lift)
     protected: double dar;
 
+    // angle of elevator deflection (positive increases lift
     protected: double de;
 
     /// \brief angle of attach when airfoil stalls

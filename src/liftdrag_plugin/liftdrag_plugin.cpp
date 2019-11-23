@@ -296,7 +296,7 @@ void LiftDragPlugin::OnUpdate()
   liftI.Normalize();
 
   // get direction of moment
-  ignition::math::Vector3d momentDirection = spanwiseI;
+  ignition::math::Vector3d pitchMomentDirection = spanwiseI;
   ignition::math::Vector3d rollMomentDirection = forwardI;
 
   // compute angle between upwardI and liftI
@@ -372,8 +372,8 @@ void LiftDragPlugin::OnUpdate()
   double cr;
   cr = this->crda * (this->dal - this->dar);
 
-  // compute moment (torque) at cp
-  ignition::math::Vector3d moment = cm * q * this->area * momentDirection;
+  // compute moments (torque) at cp
+  ignition::math::Vector3d pitchMoment = cm * q * this->area * pitchMomentDirection;
   ignition::math::Vector3d rollMoment = cr * q * this->area * rollMomentDirection;
 
 #if GAZEBO_MAJOR_VERSION >= 9
@@ -392,7 +392,7 @@ void LiftDragPlugin::OnUpdate()
   ignition::math::Vector3d force = lift + drag;
   // + moment.Cross(momentArm);
 
-  ignition::math::Vector3d torque = moment + rollMoment;
+  ignition::math::Vector3d torque = pitchMoment + rollMoment;
   // - lift.Cross(momentArm) - drag.Cross(momentArm);
 
   // debug
@@ -420,8 +420,10 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "alpha: " << this->alpha << "\n";
     gzdbg << "lift: " << lift << "\n";
     gzdbg << "drag: " << drag << " cd: "
-          << cd << " cd_a: " << this->cd_a << "\n";
-    gzdbg << "moment: " << moment << "\n";
+          << cd << " cd_a: " << this->cd_a << "\n"
+          << cd << " cd_b: " << this->cd_b << "\n"
+          << cd << " cd_c: " << this->cd_c << "\n";
+    gzdbg << "pitchMoment: " << pitchMoment << "\n";
     gzdbg << "cp momentArm: " << momentArm << "\n";
     gzdbg << "force: " << force << "\n";
     gzdbg << "torque: " << torque << "\n";
