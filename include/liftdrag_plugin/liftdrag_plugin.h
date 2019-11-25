@@ -54,20 +54,65 @@ namespace gazebo
     /// \brief Pointer to model containing plugin.
     protected: physics::ModelPtr model;
 
-    /// \brief Coefficient of Lift / alpha slope.
-    /// Lift = C_L * q * S
-    /// where q (dynamic pressure) = 0.5 * rho * v^2
+    // coefficient of lift
+    protected: double cl;
+
+    // coefficient of drag
+    protected: double cd;
+
+    // pitch moment coefficient
+    protected: double cm;
+
+    //  lift coefficient for angle of attack
     protected: double cla;
 
-    /// \brief Coefficient of Drag / alpha slope.
-    /// Drag = C_D * q * S
-    /// where q (dynamic pressure) = 0.5 * rho * v^2
-    protected: double cda;
+    // lift coefficient at 0 angle of attack
+    protected: double cl0;
 
-    /// \brief Coefficient of Moment / alpha slope.
-    /// Moment = C_M * q * S
-    /// where q (dynamic pressure) = 0.5 * rho * v^2
+    // lift coefficient for alerion deflection
+    protected: double clda;
+
+    // lift coefficient for elevator deflection
+    protected: double clde;
+
+    // drag coefficient for cl^2
+    protected: double cd_a;
+
+    // drag coefficient for cl
+    protected: double cd_b;
+
+    // drag coefficient at cl = 0
+    protected: double cd_c;
+
+    // pitch moment coefficient for angle of attack
     protected: double cma;
+
+    // pitch moment coefficient at 0 angle of attack
+    protected: double cm0;
+
+    // pitch moment coefficient for aileron deflection
+    protected: double cmda;
+
+    // Pitch moment coeffecient for elevator deflection
+    protected: double cmde;
+
+    // Roll moment coefficient for difference in aileron deflection
+    protected: double crda;
+
+    // Yaw moment coefficient for rudder deflection
+    protected: double cydr;
+
+    // angle of left aileron deflection (positive increases lift)
+    protected: double dal;
+
+    // angle of right aileron deflection (positive increases lift)
+    protected: double dar;
+
+    // angle of elevator deflection (positive increases lift)
+    protected: double de;
+
+    // angle of rudder deflection (positive is unkown...)
+    protected: double dr;
 
     /// \brief angle of attach when airfoil stalls
     protected: double alphaStall;
@@ -127,11 +172,21 @@ namespace gazebo
 
     /// \brief Pointer to a joint that actuates a control surface for
     /// this lifting body
-    protected: physics::JointPtr controlJoint;
+    protected: std::string lAileronJointName;
 
-    /// \brief how much to change CL per radian of control surface joint
-    /// value.
-    protected: double controlJointRadToCL;
+    protected: std::string rAileronJointName;
+
+    protected: std::string elevatorJointName;
+
+    protected: std::string rudderJointName;
+
+    protected: physics::JointPtr lAileronJoint;
+
+    protected: physics::JointPtr rAileronJoint;
+
+    protected: physics::JointPtr elevatorJoint;
+
+    protected: physics::JointPtr rudderJoint;
 
     /// \brief SDF for this plugin;
     protected: sdf::ElementPtr sdf;
