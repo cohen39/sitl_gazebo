@@ -99,14 +99,20 @@ namespace gazebo
     // Roll moment coefficient for difference in aileron deflection
     protected: double crda;
 
+    // Yaw moment coefficient for rudder deflection
+    protected: double cydr;
+
     // angle of left aileron deflection (positive increases lift)
     protected: double dal;
 
     // angle of right aileron deflection (positive increases lift)
     protected: double dar;
 
-    // angle of elevator deflection (positive increases lift
+    // angle of elevator deflection (positive increases lift)
     protected: double de;
+
+    // angle of rudder deflection (positive is unkown...)
+    protected: double dr;
 
     /// \brief angle of attach when airfoil stalls
     protected: double alphaStall;
@@ -172,11 +178,15 @@ namespace gazebo
 
     protected: std::string elevatorJointName;
 
+    protected: std::string rudderJointName;
+
     protected: physics::JointPtr lAileronJoint;
 
     protected: physics::JointPtr rAileronJoint;
 
     protected: physics::JointPtr elevatorJoint;
+
+    protected: physics::JointPtr rudderJoint;
 
     /// \brief SDF for this plugin;
     protected: sdf::ElementPtr sdf;

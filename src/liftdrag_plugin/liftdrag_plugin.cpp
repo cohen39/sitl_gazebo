@@ -36,18 +36,19 @@ LiftDragPlugin::LiftDragPlugin()
   this->cl = -1;
   this->cd = -1;
   this->cm = -1;
-  this->cla = 0;
-  this->cl0 = 0;
-  this->clda = 0;
-  this->clde = 0;
-  this->cd_a = 0;
-  this->cd_b = 0;
-  this->cd_c = 0;
-  this->cma = 0;
-  this->cm0 = 0;
-  this->cmda = 0;
-  this->cmde = 0;
-  this->crda = 0;
+  this->cla = -1;
+  this->cl0 = -1;
+  this->clda = -1;
+  this->clde = -1;
+  this->cd_a = -1;
+  this->cd_b = -1;
+  this->cd_c = -1;
+  this->cma = -1;
+  this->cm0 = -1;
+  this->cmda = -1;
+  this->cmde = -1;
+  this->crda = -1;
+  this->cydr = -1;
   this->cp = ignition::math::Vector3d(0, 0, 0);
   this->forward = ignition::math::Vector3d(1, 0, 0);
   this->upward = ignition::math::Vector3d(0, 0, 1);
@@ -133,6 +134,9 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   if (_sdf->HasElement("crda"))
     this->crda = _sdf->Get<double>("crda");
 
+  if (_sdf->HasElement("cydr"))
+    this->cydr = _sdf->Get<double>("cydr");
+
   if (_sdf->HasElement("alpha_stall"))
     this->alphaStall = _sdf->Get<double>("alpha_stall");
 
@@ -207,6 +211,16 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   {
     std::string elevatorJointName = _sdf->Get<std::string>("elevator_name");
     this->elevatorJoint = this->model->GetJoint(elevatorJointName);
+    if (!this->elevatorJoint)
+    {
+      gzerr << "Joint with name[" << elevatorJoint << "] does not exist.\n";
+    }
+  }
+
+  if (_sdf->HasElement("rudder_name"))
+  {
+    std::string rudderJointName = _sdf->Get<std::string>("rudder_name");
+    this->rudderJoint = this->model->GetJoint(rudderJointName);
     if (!this->elevatorJoint)
     {
       gzerr << "Joint with name[" << elevatorJoint << "] does not exist.\n";
@@ -296,8 +310,9 @@ void LiftDragPlugin::OnUpdate()
   liftI.Normalize();
 
   // get direction of moment
-  ignition::math::Vector3d pitchMomentDirection = spanwiseI;
-  ignition::math::Vector3d rollMomentDirection = forwardI;
+  ignition::math::Vector3d pitchMomentDirection = spanwiseI; // CHECK ACCURACY OF DIRECTION LATER
+  ignition::math::Vector3d rollMomentDirection = forwardI; // CHECK ACCURACY OF DIRECTION LATER
+  ignition::math::Vector3d yawMomentDirection = upwardI; // CHECK ACCURACY OF DIRECTION LATER
 
   // compute angle between upwardI and liftI
   // in general, given vectors a and b:
@@ -328,10 +343,12 @@ void LiftDragPlugin::OnUpdate()
     double dal = this->lAileronJoint->Position(0);
     double dar = this->rAileronJoint->Position(0);
     double de = this->elevatorJoint->Position(0);
+    double dr = this->rudderJoint->Position(0);
 #else
     double dal = this->lAileronJoint->GetAngle(0).Radian();
     double dar = this->rAileronJoint->GetAngle(0).Radian();
-    double el = this->elevatorJoint->GetAngle(0).Radian();
+    double de = this->elevatorJoint->GetAngle(0).Radian();
+    double dr = this->rudderJoint->GetAngle(0).Radian();
 #endif
 
   // compute cl at cp, check for stall, correct for sweep
@@ -372,9 +389,13 @@ void LiftDragPlugin::OnUpdate()
   double cr;
   cr = this->crda * (this->dal - this->dar);
 
+  double cy;
+  cy = this->cydr * this->dr;
+
   // compute moments (torque) at cp
   ignition::math::Vector3d pitchMoment = cm * q * this->area * pitchMomentDirection;
   ignition::math::Vector3d rollMoment = cr * q * this->area * rollMomentDirection;
+  ignition::math::Vector3d yawMoment = cy * q * this->area * yawMomentDirection;
 
 #if GAZEBO_MAJOR_VERSION >= 9
   ignition::math::Vector3d cog = this->link->GetInertial()->CoG();
@@ -392,7 +413,7 @@ void LiftDragPlugin::OnUpdate()
   ignition::math::Vector3d force = lift + drag;
   // + moment.Cross(momentArm);
 
-  ignition::math::Vector3d torque = pitchMoment + rollMoment;
+  ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment;
   // - lift.Cross(momentArm) - drag.Cross(momentArm);
 
   // debug

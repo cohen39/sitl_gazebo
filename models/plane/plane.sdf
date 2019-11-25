@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <sdf version='1.5'>
   <model name='plane'>
-    <pose>0 0 0 0 0 0</pose>
+    <pose>0 0 1 0 0 0</pose>
     <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <inertial>
@@ -153,6 +153,7 @@
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
     </joint>
+    
     <link name="left_elevon">
       <inertial>
         <mass>0.00000001</mass>
@@ -297,21 +298,22 @@
       <cla>3.68603</cla>
       <cl0>0.1418</cl0>
       <clda>0.0</clda>
-      <clde>0.0</clde>
+      <clde>0.01</clde>
       <cd_a>0.0</cd_a>
       <cd_b>0.25783</cd_b>
       <cd_c>0.01</cd_c>
       <cma>-1.4324</cma>
       <cm0>0.0551</cm0>
       <cmda>0.0</cmda>
-      <cmde>-0.01</cmde>
-      <crda>-0.5</crda>
+      <cmde>-0.1</cmde>
+      <crda>20</crda>
+      <cydr>20</cydr>
       <!-- <alpha_stall>0.287979326579</alpha_stall>
       <cla_stall>−2.69126461484</cla_stall>
       <cda_stall>1.1829122936</cda_stall>
       <cma_stall>−0.356870855253</cma_stall> -->
       <cp>-0.177 0.2 0</cp>
-      <area>0.182</area>
+      <area>0.184</area>
       <air_density>1.2041</air_density>
       <forward>1 0 0</forward>
       <upward>0 0 1</upward>
