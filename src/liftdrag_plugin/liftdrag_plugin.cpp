@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <string>
+#include <ctime>
 
 #include "common.h"
 #include "gazebo/common/Assert.hh"
@@ -422,8 +423,12 @@ void LiftDragPlugin::OnUpdate()
   //      this->link->GetName() == "wing_2") &&
   //     (vel.Length() > 50.0 &&
   //      vel.Length() < 50.0))
-  if (0)
+  long double curTime = time(0);
+
+  if (1 && (curTime-lastTime)>0.2)
   {
+    lastTime = curTime;
+
     gzdbg << "=============================\n";
     gzdbg << "sensor: [" << this->GetHandle() << "]\n";
     gzdbg << "Link: [" << this->link->GetName()
@@ -439,12 +444,18 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "Span direction (normal to LD plane): " << spanwiseI << "\n";
     gzdbg << "sweep: " << this->sweep << "\n";
     gzdbg << "alpha: " << this->alpha << "\n";
-    gzdbg << "lift: " << lift << "\n";
-    gzdbg << "drag: " << drag << " cd: "
-          << cd << " cd_a: " << this->cd_a << "\n"
-          << cd << " cd_b: " << this->cd_b << "\n"
-          << cd << " cd_c: " << this->cd_c << "\n";
+    // gzdbg << "lift: " << lift << "\n";
+    // gzdbg << "drag: " << drag << " cd: "
+    //       << cd << " cd_a: " << this->cd_a << "\n"
+    //       << cd << " cd_b: " << this->cd_b << "\n"
+    //       << cd << " cd_c: " << this->cd_c << "\n";
+    gzdbg << "cm: " << cm << "\n";
+    gzdbg << "cr: " << cr << "\n";
+    gzdbg << "cy: " << cy << "\n";
     gzdbg << "pitchMoment: " << pitchMoment << "\n";
+    gzdbg << "pitchMomentDirection: " << pitchMomentDirection << "\n";
+    gzdbg << "rollMoment: " << rollMoment << "\n";
+    gzdbg << "rollMomentDirection: " << rollMomentDirection << "\n";
     gzdbg << "cp momentArm: " << momentArm << "\n";
     gzdbg << "force: " << force << "\n";
     gzdbg << "torque: " << torque << "\n";
@@ -457,5 +468,5 @@ void LiftDragPlugin::OnUpdate()
 
   // apply forces at cg (with torques for position shift)
   this->link->AddForceAtRelativePosition(force, this->cp);
-  this->link->AddTorque(torque);
+  //this->link->AddTorque(torque);
 }

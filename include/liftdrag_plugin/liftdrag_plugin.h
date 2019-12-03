@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
@@ -190,6 +191,8 @@ namespace gazebo
 
     /// \brief SDF for this plugin;
     protected: sdf::ElementPtr sdf;
+
+    protected: long double lastTime;
   };
 }
 #endif
