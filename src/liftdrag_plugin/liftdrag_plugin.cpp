@@ -150,8 +150,24 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   if (_sdf->HasElement("cma_stall"))
     this->cmaStall = _sdf->Get<double>("cma_stall");
 
-  if (_sdf->HasElement("cp"))
-    this->cp = _sdf->Get<ignition::math::Vector3d>("cp");
+  if (_sdf->HasElement("x_cg"))
+  {
+    double x_cgMag  = _sdf->Get<double>("x_cg");
+                                                                //Positive x_cg (based on xflr5) is in gazebo's -y direction
+    this->x_cg      = ignition::math::Vector3d(0,-1*x_cgMag,0);  
+                                                                //In a body csys with origin at nose of aircraft, chord line, and symmetry plane
+  }
+
+  if (_sdf->HasElement("x_mac"))
+  {
+    double x_macMag  = _sdf->Get<double>("x_mac");
+                                                                //Positive x_mac (based on xflr5) is in gazebo's -y direction
+    this->x_mac      = ignition::math::Vector3d(0,-1*x_macMag,0);  
+                                                                //In a body csys with origin at nose of aircraft, chord line, and symmetry plane
+  }
+
+  if (_sdf->HasElement("chord"))
+    this->chord  = _sdf->Get<double>("chord");
 
   // blade forward (-drag) direction in link frame
   if (_sdf->HasElement("forward"))
@@ -394,9 +410,9 @@ void LiftDragPlugin::OnUpdate()
   cy = this->cydr * this->dr;
 
   // compute moments (torque) at cp
-  ignition::math::Vector3d pitchMoment = cm * q * this->area * pitchMomentDirection;
-  ignition::math::Vector3d rollMoment = cr * q * this->area * rollMomentDirection;
-  ignition::math::Vector3d yawMoment = cy * q * this->area * yawMomentDirection;
+  ignition::math::Vector3d pitchMoment = cm * q * this->area * this->chord * pitchMomentDirection;
+  ignition::math::Vector3d rollMoment = cr * q * this->area * this->chord * rollMomentDirection;
+  ignition::math::Vector3d yawMoment = cy * q * this->area * this->chord * yawMomentDirection;
 
 #if GAZEBO_MAJOR_VERSION >= 9
   ignition::math::Vector3d cog = this->link->GetInertial()->CoG();
@@ -404,27 +420,16 @@ void LiftDragPlugin::OnUpdate()
   ignition::math::Vector3d cog = ignitionFromGazeboMath(this->link->GetInertial()->GetCoG());
 #endif
 
-  // moment arm from cg to cp in inertial plane
-  ignition::math::Vector3d momentArm = pose.Rot().RotateVector(
-    this->cp - cog
-  );
-  // gzerr << this->cp << " : " << this->link->GetInertial()->CoG() << "\n";
-
   // force and torque about cg in inertial frame
   ignition::math::Vector3d force = lift + drag;
-  // + moment.Cross(momentArm);
+  
+  rCG2MAC = pose.Rot().RotateVector(this->x_mac - this->x_cg);
+  ignition::math::Vector3d displaceMoment = rCG2MAC.Cross(force); //Adjustment such that "torque" represents moment about MAC
+                                                                  //pitchMoment, rollMoment, yawMoment are about MAC
 
-  ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment;
-  // - lift.Cross(momentArm) - drag.Cross(momentArm);
+  ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment + displaceMoment;
 
-  // debug
-  //
-  // if ((this->link->GetName() == "wing_1" ||
-  //      this->link->GetName() == "wing_2") &&
-  //     (vel.Length() > 50.0 &&
-  //      vel.Length() < 50.0))
   long double curTime = time(0);
-
   if (1 && (curTime-lastTime)>0.2)
   {
     lastTime = curTime;
@@ -467,6 +472,6 @@ void LiftDragPlugin::OnUpdate()
   torque.Correct();
 
   // apply forces at cg (with torques for position shift)
-  this->link->AddForceAtRelativePosition(force, this->cp);
-  //this->link->AddTorque(torque);
+  this->link->AddForce(force);
+  this->link->AddTorque(torque);
 }
