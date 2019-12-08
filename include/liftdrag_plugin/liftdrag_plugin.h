@@ -159,6 +159,9 @@ namespace gazebo
     /// \brief Location of mac in body csys relative to 
     protected: ignition::math::Vector3d x_mac;
 
+    /// \brief Location of mac in body csys relative to cg 
+    protected: ignition::math::Vector3d xmac_xcg;
+
     /// \brief Magnitude of chord length used to non-dimensionalize moments 
     protected: double chord;
 

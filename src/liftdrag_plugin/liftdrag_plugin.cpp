@@ -50,7 +50,6 @@ LiftDragPlugin::LiftDragPlugin()
   this->cmde = -1;
   this->crda = -1;
   this->cydr = -1;
-  this->cp = ignition::math::Vector3d(0, 0, 0);
   this->forward = ignition::math::Vector3d(1, 0, 0);
   this->upward = ignition::math::Vector3d(0, 0, 1);
   this->area = 1.0;
@@ -166,6 +165,9 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
                                                                 //In a body csys with origin at nose of aircraft, chord line, and symmetry plane
   }
 
+  xmac_xcg = ignition::math::Vector3d(0, 0, 0);
+  xmac_xcg = x_mac - x_cg;
+
   if (_sdf->HasElement("chord"))
     this->chord  = _sdf->Get<double>("chord");
 
@@ -238,9 +240,9 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   {
     std::string rudderJointName = _sdf->Get<std::string>("rudder_name");
     this->rudderJoint = this->model->GetJoint(rudderJointName);
-    if (!this->elevatorJoint)
+    if (!this->rudderJoint)
     {
-      gzerr << "Joint with name[" << elevatorJoint << "] does not exist.\n";
+      gzerr << "Joint with name[" << rudderJoint << "] does not exist.\n";
     }
   }
 }
@@ -251,9 +253,9 @@ void LiftDragPlugin::OnUpdate()
   GZ_ASSERT(this->link, "Link was NULL");
   // get linear velocity at cp in inertial frame
 #if GAZEBO_MAJOR_VERSION >= 9
-  ignition::math::Vector3d vel = this->link->WorldLinearVel(this->cp);
+  ignition::math::Vector3d vel = this->link->WorldLinearVel(xmac_xcg);
 #else
-  ignition::math::Vector3d vel = ignitionFromGazeboMath(this->link->GetWorldLinearVel(this->cp));
+  ignition::math::Vector3d vel = ignitionFromGazeboMath(this->link->GetWorldLinearVel(xmac_xcg));
 #endif
   ignition::math::Vector3d velI = vel;
   velI.Normalize();
@@ -357,15 +359,15 @@ void LiftDragPlugin::OnUpdate()
   double q = 0.5 * this->rho * speedInLDPlane * speedInLDPlane;
 
 #if GAZEBO_MAJOR_VERSION >= 9
-    double dal = this->lAileronJoint->Position(0);
-    double dar = this->rAileronJoint->Position(0);
-    double de = this->elevatorJoint->Position(0);
-    double dr = this->rudderJoint->Position(0);
+    dal = this->lAileronJoint->Position(0);
+    dar = this->rAileronJoint->Position(0);
+    de = this->elevatorJoint->Position(0);
+    dr = this->rudderJoint->Position(0);
 #else
-    double dal = this->lAileronJoint->GetAngle(0).Radian();
-    double dar = this->rAileronJoint->GetAngle(0).Radian();
-    double de = this->elevatorJoint->GetAngle(0).Radian();
-    double dr = this->rudderJoint->GetAngle(0).Radian();
+    dal = this->lAileronJoint->GetAngle(0).Radian();
+    dar = this->rAileronJoint->GetAngle(0).Radian();
+    de = this->elevatorJoint->GetAngle(0).Radian();
+    dr = this->rudderJoint->GetAngle(0).Radian();
 #endif
 
   // compute cl at cp, check for stall, correct for sweep
@@ -423,6 +425,7 @@ void LiftDragPlugin::OnUpdate()
   // force and torque about cg in inertial frame
   ignition::math::Vector3d force = lift + drag;
   
+  ignition::math::Vector3d rCG2MAC;
   rCG2MAC = pose.Rot().RotateVector(this->x_mac - this->x_cg);
   ignition::math::Vector3d displaceMoment = rCG2MAC.Cross(force); //Adjustment such that "torque" represents moment about MAC
                                                                   //pitchMoment, rollMoment, yawMoment are about MAC
@@ -457,18 +460,23 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "cm: " << cm << "\n";
     gzdbg << "cr: " << cr << "\n";
     gzdbg << "cy: " << cy << "\n";
+    gzdbg << "dal: " << this->dal << "\n";
+    gzdbg << "dar: " << this->dar << "\n";
+    gzdbg << "de: " << this->de << "\n";
+    gzdbg << "dr: " << this->dr << "\n";
     gzdbg << "pitchMoment: " << pitchMoment << "\n";
     gzdbg << "pitchMomentDirection: " << pitchMomentDirection << "\n";
     gzdbg << "rollMoment: " << rollMoment << "\n";
     gzdbg << "rollMomentDirection: " << rollMomentDirection << "\n";
-    gzdbg << "cp momentArm: " << momentArm << "\n";
+    // gzdbg << "cp momentArm: " << momentArm << "\n";
     gzdbg << "force: " << force << "\n";
     gzdbg << "torque: " << torque << "\n";
+    gzdbg << "Elevator Angle: " << this->elevatorJoint->Position(0) << "\n";
   }
 
   // Correct for nan or inf
   force.Correct();
-  this->cp.Correct();
+  // this->cp.Correct();
   torque.Correct();
 
   // apply forces at cg (with torques for position shift)
