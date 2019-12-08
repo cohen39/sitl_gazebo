@@ -308,14 +308,13 @@
       <!-- <cmde>-0.1</cmde> -->
       <cmde>2</cmde>
       <crda>-2</crda>
+      <cya>-1.4324</cya>
       <cydr>5</cydr>
       <!-- <alpha_stall>0.287979326579</alpha_stall>
       <cla_stall>−2.69126461484</cla_stall>
       <cda_stall>1.1829122936</cda_stall>
       <cma_stall>−0.356870855253</cma_stall> -->
-      <x_cg>-0 0.2 0</x_cg>
-      <x_mac>-0 0.3 0</x_mac>
-      <chord>0.1</chord>
+      <chord>0.3</chord>
       <area>0.184</area>
       <air_density>1.2041</air_density>
       <forward>1 0 0</forward>

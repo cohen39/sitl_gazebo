@@ -134,6 +134,9 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   if (_sdf->HasElement("crda"))
     this->crda = _sdf->Get<double>("crda");
 
+  if (_sdf->HasElement("cyb"))
+    this->cydr = _sdf->Get<double>("cyb");
+
   if (_sdf->HasElement("cydr"))
     this->cydr = _sdf->Get<double>("cydr");
 
@@ -148,25 +151,6 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
 
   if (_sdf->HasElement("cma_stall"))
     this->cmaStall = _sdf->Get<double>("cma_stall");
-
-  if (_sdf->HasElement("x_cg"))
-  {
-    double x_cgMag  = _sdf->Get<double>("x_cg");
-                                                                //Positive x_cg (based on xflr5) is in gazebo's -y direction
-    this->x_cg      = ignition::math::Vector3d(0,-1*x_cgMag,0);  
-                                                                //In a body csys with origin at nose of aircraft, chord line, and symmetry plane
-  }
-
-  if (_sdf->HasElement("x_mac"))
-  {
-    double x_macMag  = _sdf->Get<double>("x_mac");
-                                                                //Positive x_mac (based on xflr5) is in gazebo's -y direction
-    this->x_mac      = ignition::math::Vector3d(0,-1*x_macMag,0);  
-                                                                //In a body csys with origin at nose of aircraft, chord line, and symmetry plane
-  }
-
-  xmac_xcg = ignition::math::Vector3d(0, 0, 0);
-  xmac_xcg = x_mac - x_cg;
 
   if (_sdf->HasElement("chord"))
     this->chord  = _sdf->Get<double>("chord");
@@ -253,9 +237,9 @@ void LiftDragPlugin::OnUpdate()
   GZ_ASSERT(this->link, "Link was NULL");
   // get linear velocity at cp in inertial frame
 #if GAZEBO_MAJOR_VERSION >= 9
-  ignition::math::Vector3d vel = this->link->WorldLinearVel(xmac_xcg);
+  ignition::math::Vector3d vel = this->link->WorldLinearVel(ignition::math::Vector3d(0, 0, 0));
 #else
-  ignition::math::Vector3d vel = ignitionFromGazeboMath(this->link->GetWorldLinearVel(xmac_xcg));
+  ignition::math::Vector3d vel = ignitionFromGazeboMath(this->link->GetWorldLinearVel(ignition::math::Vector3d(0, 0, 0)));
 #endif
   ignition::math::Vector3d velI = vel;
   velI.Normalize();
@@ -338,6 +322,15 @@ void LiftDragPlugin::OnUpdate()
   //   cos(theta) = a.Dot(b)/(a.Length()*b.Lenghth())
   // given upwardI and liftI are both unit vectors, we can drop the denominator
   //   cos(theta) = a.Dot(b)
+  double sinBeta = ignition::math::clamp(velI.Dot(spanwiseI), minRatio, maxRatio);
+
+  this->beta = -1*asin(sinBeta);
+
+  // compute angle between upwardI and liftI
+  // in general, given vectors a and b:
+  //   cos(theta) = a.Dot(b)/(a.Length()*b.Lenghth())
+  // given upwardI and liftI are both unit vectors, we can drop the denominator
+  //   cos(theta) = a.Dot(b)
   double cosAlpha = ignition::math::clamp(liftI.Dot(upwardI), minRatio, maxRatio);
 
   // Is alpha positive or negative? Test:
@@ -409,7 +402,7 @@ void LiftDragPlugin::OnUpdate()
   cr = this->crda * (this->dal - this->dar);
 
   double cy;
-  cy = this->cydr * this->dr;
+  cy = this->cydr * this->dr + this->cyb * this->beta;
 
   // compute moments (torque) at cp
   ignition::math::Vector3d pitchMoment = cm * q * this->area * this->chord * pitchMomentDirection;
@@ -424,13 +417,8 @@ void LiftDragPlugin::OnUpdate()
 
   // force and torque about cg in inertial frame
   ignition::math::Vector3d force = lift + drag;
-  
-  ignition::math::Vector3d rCG2MAC;
-  rCG2MAC = pose.Rot().RotateVector(this->x_mac - this->x_cg);
-  ignition::math::Vector3d displaceMoment = rCG2MAC.Cross(force); //Adjustment such that "torque" represents moment about MAC
-                                                                  //pitchMoment, rollMoment, yawMoment are about MAC
 
-  ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment + displaceMoment;
+  ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment;
 
   long double curTime = time(0);
   if (1 && (curTime-lastTime)>0.2)

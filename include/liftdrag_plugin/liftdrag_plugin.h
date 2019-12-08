@@ -100,6 +100,9 @@ namespace gazebo
     // Roll moment coefficient for difference in aileron deflection
     protected: double crda;
 
+    // Yaw moment coefficient for sideslip
+    protected: double cyb;
+
     // Yaw moment coefficient for rudder deflection
     protected: double cydr;
 
@@ -153,14 +156,8 @@ namespace gazebo
     /// \brief angle of attack
     protected: double alpha;
 
-    /// \brief Magnitude of chord length used to non-dimensionalize moments
-    protected: ignition::math::Vector3d x_cg;
-
-    /// \brief Location of mac in body csys relative to 
-    protected: ignition::math::Vector3d x_mac;
-
-    /// \brief Location of mac in body csys relative to cg 
-    protected: ignition::math::Vector3d xmac_xcg;
+    /// \brief angle of attack
+    protected: double beta;
 
     /// \brief Magnitude of chord length used to non-dimensionalize moments 
     protected: double chord;
