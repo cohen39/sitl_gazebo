@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
@@ -152,8 +153,17 @@ namespace gazebo
     /// \brief angle of attack
     protected: double alpha;
 
-    /// \brief center of pressure in link local coordinates
-    protected: ignition::math::Vector3d cp;
+    /// \brief Magnitude of chord length used to non-dimensionalize moments
+    protected: ignition::math::Vector3d x_cg;
+
+    /// \brief Location of mac in body csys relative to 
+    protected: ignition::math::Vector3d x_mac;
+
+    /// \brief Location of mac in body csys relative to cg 
+    protected: ignition::math::Vector3d xmac_xcg;
+
+    /// \brief Magnitude of chord length used to non-dimensionalize moments 
+    protected: double chord;
 
     /// \brief Normally, this is taken as a direction parallel to the chord
     /// of the airfoil in zero angle of attack forward flight.
@@ -190,6 +200,8 @@ namespace gazebo
 
     /// \brief SDF for this plugin;
     protected: sdf::ElementPtr sdf;
+
+    protected: long double lastTime;
   };
 }
 #endif
