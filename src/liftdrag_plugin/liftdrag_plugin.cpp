@@ -34,28 +34,30 @@ GZ_REGISTER_MODEL_PLUGIN(LiftDragPlugin)
 /////////////////////////////////////////////////
 LiftDragPlugin::LiftDragPlugin()
 {
-  this->cl = -1;
-  this->cd = -1;
-  this->cm = -1;
-  this->cla = -1;
-  this->cl0 = -1;
-  this->clda = -1;
-  this->clde = -1;
-  this->cd_a = -1;
-  this->cd_b = -1;
-  this->cd_c = -1;
-  this->cma = -1;
-  this->cm0 = -1;
-  this->cmda = -1;
-  this->cmde = -1;
-  this->crda = -1;
-  this->cydr = -1;
+  this->cla =  0;
+  this->cl0 =  0;
+  this->clda =  0;
+  this->clde =  0;
+  this->cd_a =  0;
+  this->cd_b =  0;
+  this->cd_c =  0;
+  this->cma0 =  0;
+  this->cma1 =  0;
+  this->cma2 =  0;
+  this->cma3 =  0;
+  this->cma4 =  0;
+  this->cma5 =  0;
+  this->cma6 =  0;
+  this->cmda =  0;
+  this->cmde =  0;
+  this->crda =  0;
+  this->cydr =  0;
   this->forward = ignition::math::Vector3d(1, 0, 0);
   this->upward = ignition::math::Vector3d(0, 0, 1);
-  this->area = 1.0;
-  this->alpha = 0.0;
-  this->sweep = 0.0;
-  this->velocityStall = 0.0;
+  this->area = 0;
+  this->alpha = 0;
+  this->sweep = 0;
+  this->velocityStall = 0;
 
   // 90 deg stall
   this->alphaStall = 0.5*M_PI;
@@ -66,6 +68,8 @@ LiftDragPlugin::LiftDragPlugin()
   /// \TODO: what's flat plate drag?
   this->cdaStall = 1.0;
   this->cmaStall = 0.0;
+
+  this->lastTime = 0;
 
 }
 
@@ -119,11 +123,26 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
   if (_sdf->HasElement("cd_c"))
     this->cd_c = _sdf->Get<double>("cd_c");
 
-  if (_sdf->HasElement("cma"))
-    this->cma = _sdf->Get<double>("cma");
+  if (_sdf->HasElement("cma6"))
+    this->cma6 = _sdf->Get<double>("cma6");
 
-  if (_sdf->HasElement("cm0"))
-    this->cm0 = _sdf->Get<double>("cm0");
+  if (_sdf->HasElement("cma5"))
+    this->cma5 = _sdf->Get<double>("cma5");
+
+  if (_sdf->HasElement("cma4"))
+    this->cma4 = _sdf->Get<double>("cma4");
+
+  if (_sdf->HasElement("cma3"))
+    this->cma3 = _sdf->Get<double>("cma3");
+
+  if (_sdf->HasElement("cma2"))
+    this->cma2 = _sdf->Get<double>("cma2");
+
+  if (_sdf->HasElement("cma1"))
+    this->cma1 = _sdf->Get<double>("cma1");
+
+  if (_sdf->HasElement("cma0"))
+    this->cma0 = _sdf->Get<double>("cma0");
 
   if (_sdf->HasElement("cmda"))
     this->cmda = _sdf->Get<double>("cmda");
@@ -135,7 +154,7 @@ void LiftDragPlugin::Load(physics::ModelPtr _model,
     this->crda = _sdf->Get<double>("crda");
 
   if (_sdf->HasElement("cyb"))
-    this->cydr = _sdf->Get<double>("cyb");
+    this->cyb = _sdf->Get<double>("cyb");
 
   if (_sdf->HasElement("cydr"))
     this->cydr = _sdf->Get<double>("cydr");
@@ -303,6 +322,7 @@ void LiftDragPlugin::OnUpdate()
   // so,
   // removing spanwise velocity from vel
   ignition::math::Vector3d velInLDPlane = vel - vel.Dot(spanwiseI)*velI;
+  ignition::math::Vector3d velInSDPlane = vel - vel.Dot(upwardI)*velI;
 
   // get direction of drag
   ignition::math::Vector3d dragDirection = -velInLDPlane;
@@ -349,7 +369,9 @@ void LiftDragPlugin::OnUpdate()
 
   // compute dynamic pressure
   double speedInLDPlane = velInLDPlane.Length();
-  double q = 0.5 * this->rho * speedInLDPlane * speedInLDPlane;
+  double speedInSDPlane = velInSDPlane.Length();
+  double q_LD = 0.5 * this->rho * speedInLDPlane * speedInLDPlane;
+  double q_SD = 0.5 * this->rho * speedInSDPlane * speedInSDPlane;
 
 #if GAZEBO_MAJOR_VERSION >= 9
     dal = this->lAileronJoint->Position(0);
@@ -364,7 +386,7 @@ void LiftDragPlugin::OnUpdate()
 #endif
 
   // compute cl at cp, check for stall, correct for sweep
-  double cl;
+  double cl = 0;
   cl = this->cla * this->alpha + this->cl0 + this->clda * (this->dal + this->dar) + this->clde * this->de;
 
   // modify cl per control joint value
@@ -382,21 +404,34 @@ void LiftDragPlugin::OnUpdate()
 */
 
   // compute lift force at cp
-  ignition::math::Vector3d lift = cl * q * this->area * liftI;
+  ignition::math::Vector3d lift = cl * q_LD * this->area * liftI;
 
   // compute cd at cp, check for stall, correct for sweep
-  double cd;
-  cd = this->cd_a*this->cl*this->cl + this->cd_b*this->cl + this->cd_c;
+  double cd = 0;
+  cd = this->cd_a*cl*cl + this->cd_b*cl + this->cd_c;
 
-  // make sure drag is positive
-  cd = fabs(cd);
+  // drag
+  ignition::math::Vector3d drag = cd * q_LD * this->area * dragDirection;
 
-  // drag at cp
-  ignition::math::Vector3d drag = cd * q * this->area * dragDirection;
+  //compute cm at cg
+  double cm = 0;
+  double alpha2 = this->alpha*this->alpha;
+  double alpha3 = this->alpha*alpha2;
+  double alpha4 = this->alpha*alpha3;
+  double alpha5 = this->alpha*alpha4;
+  double alpha6 = this->alpha*alpha5;
 
-  // compute cm at cp, check for stall, correct for sweep
-  double cm;
-  cm = this->cma * this->alpha + this->cm0 + this->cmda * (this->dal + this->dar) + this->cmde * this->de;
+  cm = 
+  this->cma6*alpha6 +
+  this->cma5*alpha5 +
+  this->cma4*alpha4 +
+  this->cma3*alpha3 +
+  this->cma2*alpha2 +
+  this->cma1*this->alpha +
+  this->cma0 +
+  this->cmda * (this->dal + this->dar) + this->cmde * this->de;
+
+  // double cm = 0;
 
   double cr;
   cr = this->crda * (this->dal - this->dar);
@@ -405,9 +440,9 @@ void LiftDragPlugin::OnUpdate()
   cy = this->cydr * this->dr + this->cyb * this->beta;
 
   // compute moments (torque) at cp
-  ignition::math::Vector3d pitchMoment = cm * q * this->area * this->chord * pitchMomentDirection;
-  ignition::math::Vector3d rollMoment = cr * q * this->area * this->chord * rollMomentDirection;
-  ignition::math::Vector3d yawMoment = cy * q * this->area * this->chord * yawMomentDirection;
+  ignition::math::Vector3d pitchMoment = cm * q_LD * this->area * this->chord * pitchMomentDirection;
+  ignition::math::Vector3d rollMoment = cr * q_LD * this->area * this->chord * rollMomentDirection;
+  ignition::math::Vector3d yawMoment = cy * q_SD * this->area * this->chord * yawMomentDirection;
 
 #if GAZEBO_MAJOR_VERSION >= 9
   ignition::math::Vector3d cog = this->link->GetInertial()->CoG();
@@ -421,7 +456,7 @@ void LiftDragPlugin::OnUpdate()
   ignition::math::Vector3d torque = pitchMoment + rollMoment + yawMoment;
 
   long double curTime = time(0);
-  if (1 && (curTime-lastTime)>0.2)
+  if (1 && (curTime-lastTime)>0.1)
   {
     lastTime = curTime;
 
@@ -429,7 +464,8 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "sensor: [" << this->GetHandle() << "]\n";
     gzdbg << "Link: [" << this->link->GetName()
           << "] pose: [" << pose
-          << "] dynamic pressure: [" << q << "]\n";
+          << "] dynamic pressure (LD): [" << q_LD << "]\n"
+          << "] dynamic pressure (SD): [" << q_SD << "]\n";
     gzdbg << "spd: [" << vel.Length()
           << "] vel: [" << vel << "]\n";
     gzdbg << "LD plane spd: [" << velInLDPlane.Length()
@@ -440,11 +476,13 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "Span direction (normal to LD plane): " << spanwiseI << "\n";
     gzdbg << "sweep: " << this->sweep << "\n";
     gzdbg << "alpha: " << this->alpha << "\n";
-    // gzdbg << "lift: " << lift << "\n";
-    // gzdbg << "drag: " << drag << " cd: "
-    //       << cd << " cd_a: " << this->cd_a << "\n"
-    //       << cd << " cd_b: " << this->cd_b << "\n"
-    //       << cd << " cd_c: " << this->cd_c << "\n";
+    gzdbg << "beta: " << this->beta << "\n";
+    gzdbg << "lift: " << lift << "\n"
+          << "cl:" << cl << "\n";
+    gzdbg << "drag: " << drag << " cd: " << cd << "\n" 
+          <<" cd_a: " << this->cd_a << "\n"
+          << " cd_b: " << this->cd_b << "\n"
+          " cd_c: " << this->cd_c << "\n";
     gzdbg << "cm: " << cm << "\n";
     gzdbg << "cr: " << cr << "\n";
     gzdbg << "cy: " << cy << "\n";
@@ -456,6 +494,8 @@ void LiftDragPlugin::OnUpdate()
     gzdbg << "pitchMomentDirection: " << pitchMomentDirection << "\n";
     gzdbg << "rollMoment: " << rollMoment << "\n";
     gzdbg << "rollMomentDirection: " << rollMomentDirection << "\n";
+    gzdbg << "yawMoment: " << yawMoment << "\n";
+    gzdbg << "yawMomentDirection: " << yawMomentDirection << "\n";
     // gzdbg << "cp momentArm: " << momentArm << "\n";
     gzdbg << "force: " << force << "\n";
     gzdbg << "torque: " << torque << "\n";
@@ -468,6 +508,15 @@ void LiftDragPlugin::OnUpdate()
   torque.Correct();
 
   // apply forces at cg (with torques for position shift)
-  this->link->AddForce(force);
-  this->link->AddTorque(torque);
+  if(abs(this->alpha)<0.7)
+  {
+    //this->link->AddForce(force);
+    this->link->AddTorque(torque);
+  }
+  else
+  {
+    this->link->AddForce(ignition::math::Vector3d(0, 0, 0));
+    this->link->AddTorque(ignition::math::Vector3d(0, 0, 0)); 
+    gzdbg << "Alpha too large. Turning off aero forces..." << "\n";
+  }
 }

@@ -55,15 +55,6 @@ namespace gazebo
     /// \brief Pointer to model containing plugin.
     protected: physics::ModelPtr model;
 
-    // coefficient of lift
-    protected: double cl;
-
-    // coefficient of drag
-    protected: double cd;
-
-    // pitch moment coefficient
-    protected: double cm;
-
     //  lift coefficient for angle of attack
     protected: double cla;
 
@@ -86,10 +77,25 @@ namespace gazebo
     protected: double cd_c;
 
     // pitch moment coefficient for angle of attack
-    protected: double cma;
+    protected: double cma6;
+
+    // pitch moment coefficient for angle of attack
+    protected: double cma5;
+
+        // pitch moment coefficient for angle of attack
+    protected: double cma4;
+
+    // pitch moment coefficient for angle of attack
+    protected: double cma3;
+
+        // pitch moment coefficient for angle of attack
+    protected: double cma2;
+
+    // pitch moment coefficient for angle of attack
+    protected: double cma1;
 
     // pitch moment coefficient at 0 angle of attack
-    protected: double cm0;
+    protected: double cma0;
 
     // pitch moment coefficient for aileron deflection
     protected: double cmda;

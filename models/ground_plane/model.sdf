@@ -14,12 +14,12 @@
           <contact>
              <collide_bitmask>65535</collide_bitmask>
           </contact>
-          <friction>
+<!--           <friction>
             <ode>
               <mu>100</mu>
               <mu2>50</mu2>
             </ode>
-          </friction>
+          </friction> -->
         </surface>
       </collision>
       <visual name="visual">

@@ -6,18 +6,18 @@
       <pose>0 0 0 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
-        <mass>1.404</mass>
+        <mass>0.844</mass>
         <inertia>
-          <ixx>0.06353</ixx>
+          <ixx>0.00137</ixx>
           <ixy>0</ixy>
-          <ixz>0.01580</ixz>
-          <iyy>0.18514</iyy>
+          <ixz>0.00056</ixz>
+          <iyy>1.6638</iyy>
           <iyz>0</iyz>
-          <izz>0.23410</izz>
+          <izz>1.66502</izz>
         </inertia>
       </inertial>
       <collision name='base_link_collision'>
-        <pose>0 0 -0.07 0 0 0</pose>
+        <pose>0.2325 0 -0.07 0 0 0</pose>
         <geometry>
           <box>
             <size>0.47 0.47 0.11</size>
@@ -295,28 +295,35 @@
       </physics>
     </joint>
     <plugin name="plane1" filename="libLiftDragPlugin.so">
-      <cla>3.68603</cla>
-      <cl0>0.1418</cl0>
-      <clda>0.0</clda>
-      <clde>0.01</clde>
-      <cd_a>0.0</cd_a>
-      <cd_b>0.25783</cd_b>
-      <cd_c>0.01</cd_c>
-      <cma>-1.4324</cma>
-      <cm0>0.0551</cm0>
-      <cmda>0.0</cmda>
-      <!-- <cmde>-0.1</cmde> -->
-      <cmde>2</cmde>
-      <crda>-2</crda>
-      <cya>-1.4324</cya>
+      <cla>1.6711</cla>
+      <cl0>-0.0177</cl0>
+      <clda>0</clda>
+      <clde>-0.8285</clde>
+      <cdde>-0.0607</cdde>
+      <cd_a>0.3508</cd_a>
+      <cd_b>-0.0457</cd_b>
+      <cd_c>0.0124</cd_c>
+      <cma6>0</cma6>
+      <cma5>0</cma5>
+      <cma4>0</cma4>
+      <cma3>0</cma3>
+      <cma2>0</cma2>
+      <cma1>-0.0782</cma1>
+      <cma0>0.0130</cma0>
+      <cmda>0</cmda>
+      <cmde>0.2819</cmde>
+      <crda>-0.3594</crda>
+      <cya>0</cya>
+      <!-- <cyb>0.1158</cyb> -->
+      <cyb>1</cyb>
       <cydr>0</cydr>
       <!-- <alpha_stall>0.287979326579</alpha_stall>
       <cla_stall>−2.69126461484</cla_stall>
       <cda_stall>1.1829122936</cda_stall>
       <cma_stall>−0.356870855253</cma_stall> -->
-      <chord>0.3</chord>
-      <area>0.184</area>
-      <air_density>1.2041</air_density>
+      <chord>0.394</chord>
+      <area>0.110</area>
+      <air_density>1.155</air_density>
       <forward>1 0 0</forward>
       <upward>0 0 1</upward>
       <link_name>base_link</link_name>
@@ -333,12 +340,13 @@
       <timeConstantUp>0.0125</timeConstantUp>
       <timeConstantDown>0.025</timeConstantDown>
       <maxRotVelocity>3500</maxRotVelocity>
-      <motorConstant>8.54858e-06</motorConstant>
-      <momentConstant>0.01</momentConstant>
+<!--       <motorConstant>8.54858e-06</motorConstant> -->
+      <motorConstant>8.54858e-04</motorConstant>
+      <momentConstant>0.00</momentConstant>
       <commandSubTopic>/gazebo/command/motor_speed</commandSubTopic>
       <motorNumber>4</motorNumber>
       <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
-      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rollingMomentCoefficient>0</rollingMomentCoefficient>
       <motorSpeedPubTopic>/motor_speed/4</motorSpeedPubTopic>
       <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
     </plugin>
@@ -421,7 +429,7 @@
           <zero_position_disarmed>0</zero_position_disarmed>
           <zero_position_armed>0</zero_position_armed>
           <joint_control_type>position_kinematic</joint_control_type>
-          <joint_name>left_elevon_joint</joint_name>
+          <joint_name>left_elevon_joint</joint_name>da
         </channel>
         <channel name="right_elevon">
           <input_index>6</input_index>
